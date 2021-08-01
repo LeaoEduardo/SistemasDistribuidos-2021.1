@@ -1,0 +1,1 @@
+Os documentos foram extraídos de [https://www.kaggle.com/pariza/bbc-news-summary](https://www.kaggle.com/pariza/bbc-news-summary) e consistem de notícias do portal BBC correspondente a 5 áreas de 2004 a 2005.

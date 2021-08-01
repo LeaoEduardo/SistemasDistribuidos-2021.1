@@ -1,8 +1,6 @@
 import socket
 # Exemplo basico socket (lado ativo)
 
-import socket
-
 HOST = 'localhost' # maquina onde esta o par passivo
 PORTA = 5000        # porta que o par passivo esta escutando
 
