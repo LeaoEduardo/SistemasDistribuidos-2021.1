@@ -114,31 +114,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-
-# while True:
-# 	# depois de conectar-se, espera uma mensagem (chamada pode ser BLOQUEANTE))
-#   raw_msg = novoSock.recv(1024) # argumento indica a qtde maxima de dados
-#   if not raw_msg: 
-#     break 
-#   else: 
-#     msg = json.loads(raw_msg)
-
-#     file = search_file(msg["file"])
-#     if file != -1:
-#       number = occurrences(msg['word'], file)
-#     else:
-#       number = file
-
-#     answer = {
-#       "message" : number
-#     }
-
-# 	  # envia mensagem de resposta
-#     novoSock.send(bytes(json.dumps(answer), encoding='utf-8')) 
-
-# # fecha o socket da conexao
-# novoSock.close() 
-
-# # fecha o socket principal
-# sock.close() 
