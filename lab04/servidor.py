@@ -58,6 +58,9 @@ def handle_requests(clisock, address):
         data = clisock.recv(1024) 
         if not data: # dados vazios: cliente encerrou
             print(str(address) + '-> encerrou')
+            for user in users:
+                if user["address"] == address:
+                    remove_active_user(clisock, user["address"], user["user"])
             clisock.close() # encerra a conexao com o cliente
             return
         else: 
@@ -67,11 +70,11 @@ def handle_requests(clisock, address):
                 pass
             elif msg["type"] == "request":
                 if msg["command"] == 'open':
-                    add_active_user(clisock, address, msg["message"])
+                    add_active_user(clisock, address, msg["source"], msg["message"])
                 elif msg["command"] == 'close':
-                    remove_active_user(clisock, address, msg["message"])
+                    remove_active_user(clisock, address, msg["source"], msg["message"])
                 elif msg["command"] == 'show':
-                    send(clisock, address, 'show', users, type_msg='request')
+                    send(clisock, address, 'show', '', type_msg='request')
                 elif msg["command"] == 'update':
                     pass
                 elif msg["command"] == 'finish':
@@ -96,15 +99,14 @@ def send(clisock, address, command, message, type_msg='response'):
     }
     clisock.sendall(bytes(json.dumps(msg_dict), encoding='utf-8'))
 
-def add_active_user(clisock, address, name):
+def add_active_user(clisock, address, source, name):
 
     global users
 
-    user = User(name=name, port=address[0])
-
     users.append({
-        "user": user.name,
-        "address": user.address
+        "user": name,
+        "address": address,
+        "open": source
     })
     print("Active users list:")
     pprint(users)

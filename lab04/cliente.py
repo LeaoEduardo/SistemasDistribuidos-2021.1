@@ -7,8 +7,7 @@ from random import randint
 
 from user import User
 
-SERVER_HOST = 'localhost' #maquina onde está o servidor
-SERVER_PORT = 5000 #porta onde servidor escuta
+from variables import SERVER_HOST, SERVER_PORT
 
 # cria socket
 server_sock = socket.socket() # default: socket.AF_INET, socket.SOCK_STREAM 
@@ -20,15 +19,15 @@ print(user_port)
 
 user_name = input("What's your name? ")
 
-user = User(name=user_name, port=randint(6000,10000))
+user = User(name=user_name, port=randint(6000,10000), server_sock=server_sock)
 
 available_users = []
 
-def send_request_to_server(user, command):
+def send_request_to_server(user, command, server_sock=server_sock):
 
     msg_dict = {
         "type" : "request",
-        "source": user.address,
+        "source": [SERVER_HOST, user.address[1]],
         "destiny" : (SERVER_HOST, SERVER_PORT),
         "command" : command,
         "message" : user.name
@@ -48,12 +47,12 @@ while True:
     if command == 'open':
         send_request_to_server(user, command)
         answer = receive_server_response()
-        available_users = answer["users"]
         pprint(answer)
+        available_users = answer["users"]
         user.init_server()
         user.receive_connections(available_users)
-
-    break
+    if command == 'finish':
+        break
     
 # encerra a conexao
-sock.close() 
+server_sock.close() 
