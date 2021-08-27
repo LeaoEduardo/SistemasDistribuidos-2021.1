@@ -3,40 +3,57 @@ import json
 
 from pprint import pprint
 
-SEVER_HOST = 'localhost' #maquina onde está o servidor
+from random import randint
+
+from user import User
+
+SERVER_HOST = 'localhost' #maquina onde está o servidor
 SERVER_PORT = 5000 #porta onde servidor escuta
 
 # cria socket
-sock = socket.socket() # default: socket.AF_INET, socket.SOCK_STREAM 
+server_sock = socket.socket() # default: socket.AF_INET, socket.SOCK_STREAM 
 
 # conecta-se com o par passivo
-sock.connect((SEVER_HOST, SERVER_PORT)) 
+server_sock.connect((SERVER_HOST, SERVER_PORT)) 
+user_port = int(str(server_sock.recv(1024), encoding='utf-8'))
+print(user_port)
 
 user_name = input("What's your name? ")
 
-while True:
+user = User(name=user_name, port=randint(6000,10000))
 
-    command = input("Type your command ")
+available_users = []
+
+def send_request_to_server(user, command):
 
     msg_dict = {
         "type" : "request",
-        "destiny" : f"{SEVER_HOST}:{SERVER_PORT}",
+        "source": user.address,
+        "destiny" : (SERVER_HOST, SERVER_PORT),
         "command" : command,
-        "message" : user_name
+        "message" : user.name
     }
-
     msg = json.dumps(msg_dict)
 
-    sock.sendall(bytes(msg, encoding='utf-8'))
+    server_sock.sendall(bytes(msg, encoding='utf-8'))
+
+def receive_server_response():
     #espera a resposta do par conectado (chamada pode ser BLOQUEANTE)
-    raw_answer = sock.recv(1024) # argumento indica a qtde maxima de bytes da mensagem
+    raw_answer = server_sock.recv(1024) # argumento indica a qtde maxima de bytes da mensagem
     # imprime a mensagem recebida
-    answer = json.loads(str(raw_answer,encoding='utf-8'))
+    return json.loads(str(raw_answer,encoding='utf-8'))
 
-    pprint(answer)
+while True:
+    command = input("Type your command ")
+    if command == 'open':
+        send_request_to_server(user, command)
+        answer = receive_server_response()
+        available_users = answer["users"]
+        pprint(answer)
+        user.init_server()
+        user.receive_connections(available_users)
 
-    if command == 'close':
-        break
-
+    break
+    
 # encerra a conexao
 sock.close() 

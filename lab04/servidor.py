@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from pprint import pprint
 
+from user import User
+
 HOST = ''    # '' possibilita acessar qualquer endereco alcancavel da maquina local
 PORT = 5000  # PORT onde chegarao as mensagens para essa aplicacao
 
@@ -42,6 +44,8 @@ def accept_connection(sock):
     # registra a nova conexao
     connections[clisock] = address
 
+    clisock.sendall(bytes(str(address[1]), encoding='utf-8'))
+
     return clisock, address
 
 def handle_requests(clisock, address):
@@ -74,18 +78,20 @@ def handle_requests(clisock, address):
                     pass
             else:
                 print("Error: message must be of type 'request' or 'response'")
-                return
 
 def send(clisock, address, command, message, type_msg='response'):
     ''' 
     Envia resposta ao cliente
     '''
 
+    global users
+
     msg_dict = {
         "type" : type_msg,
         "source" : ['localhost', PORT],
         "destiny" : address,
         "command" : command,
+        "users" : users,
         "message" : message
     }
     clisock.sendall(bytes(json.dumps(msg_dict), encoding='utf-8'))
@@ -94,9 +100,11 @@ def add_active_user(clisock, address, name):
 
     global users
 
+    user = User(name=name, port=address[0])
+
     users.append({
-        "user": name,
-        "address": address
+        "user": user.name,
+        "address": user.address
     })
     print("Active users list:")
     pprint(users)
@@ -107,11 +115,8 @@ def remove_active_user(clisock, address, name):
     global users
 
     for user in users:
-        if user["user"] == name:
-            users.remove({
-                "user": name,
-                "address": address
-            })
+        if user["user"] == name and user["address"] == address:
+            users.remove(user)
             break
     print("Active users list:")
     pprint(users)
@@ -126,9 +131,9 @@ def main():
     print("\t 'finish' to end server\n\t 'show' to see all connections")
     while True:
         #espera por qualquer entrada de interesse
-        read, _, _ = select.select(entries, [], [])
+        readList, _, _ = select.select(entries, [], [])
         #tratar todas as entradas prontas
-        for ready in read:
+        for ready in readList:
             if ready == sock:  #pedido novo de conexao
                 clisock, address = accept_connection(sock)
                 print ('Connected to: ', address)
