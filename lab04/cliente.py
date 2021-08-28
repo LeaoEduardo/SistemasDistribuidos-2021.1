@@ -14,10 +14,12 @@ server_sock = socket.socket() # default: socket.AF_INET, socket.SOCK_STREAM
 
 # conecta-se com o par passivo
 server_sock.connect((SERVER_HOST, SERVER_PORT)) 
-user_port = int(str(server_sock.recv(1024), encoding='utf-8'))
-print(user_port)
+
+# user_port = int(str(server_sock.recv(1024), encoding='utf-8'))
+# print(user_port)
 
 user_name = input("What's your name? ")
+#TODO verificar se nome eh validos
 
 user = User(name=user_name, port=randint(6000,10000), server_sock=server_sock)
 

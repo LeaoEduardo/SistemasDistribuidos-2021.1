@@ -44,7 +44,7 @@ def accept_connection(sock):
     # registra a nova conexao
     connections[clisock] = address
 
-    clisock.sendall(bytes(str(address[1]), encoding='utf-8'))
+    # clisock.sendall(bytes(str(address[1]), encoding='utf-8'))
 
     return clisock, address
 
