@@ -3,7 +3,6 @@ import json
 import threading
 import select
 import sys
-from pathlib import Path
 from pprint import pprint
 
 from user import User
@@ -44,9 +43,36 @@ def accept_connection(sock):
     # registra a nova conexao
     connections[clisock] = address
 
-    # clisock.sendall(bytes(str(address[1]), encoding='utf-8'))
-
     return clisock, address
+
+def send(clisock, address, command, message='', type_msg='response'):
+    ''' 
+    Envia resposta ao cliente
+    '''
+
+    global users
+
+    msg_dict = {
+        "type" : type_msg,
+        "source" : ['localhost', PORT],
+        "destiny" : address,
+        "command" : command,
+        "users" : users,
+        "message" : message
+    }
+    clisock.sendall(bytes(json.dumps(msg_dict), encoding='utf-8'))
+
+def broadcast_users_list():
+    for sock in connections:
+        send(sock, connections[sock],'update',type_msg='request')
+        data = sock.recv(1024)
+        if not data:
+            print(str(connections[sock]) + '-> encerrou')
+            for user in users:
+                if user["address"] == connections[sock]:
+                    remove_active_user(sock, user["address"], user["user"])
+            sock.close() # encerra a conexao com o cliente
+
 
 def handle_requests(clisock, address):
     '''Recebe mensagens e as envia de volta para o cliente (ate o cliente finalizar)
@@ -71,37 +97,34 @@ def handle_requests(clisock, address):
             elif msg["type"] == "request":
                 if msg["command"] == 'open':
                     add_active_user(clisock, address, msg["source"], msg["message"])
+                    broadcast_users_list()
                 elif msg["command"] == 'close':
-                    remove_active_user(clisock, address, msg["source"], msg["message"])
+                    try:
+                        remove_active_user(clisock, address, msg["message"])
+                        broadcast_users_list()
+                    except BrokenPipeError:
+                        pass
                 elif msg["command"] == 'show':
                     send(clisock, address, 'show', '', type_msg='request')
                 elif msg["command"] == 'update':
                     pass
-                elif msg["command"] == 'finish':
-                    pass
             else:
                 print("Error: message must be of type 'request' or 'response'")
 
-def send(clisock, address, command, message, type_msg='response'):
-    ''' 
-    Envia resposta ao cliente
-    '''
 
-    global users
-
-    msg_dict = {
-        "type" : type_msg,
-        "source" : ['localhost', PORT],
-        "destiny" : address,
-        "command" : command,
-        "users" : users,
-        "message" : message
-    }
-    clisock.sendall(bytes(json.dumps(msg_dict), encoding='utf-8'))
 
 def add_active_user(clisock, address, source, name):
 
     global users
+
+    msg = "SUCCESS"
+
+    for user in users:
+        if user["user"] == name:
+            msg = "FAILED: username already exists"
+            send(clisock, address, "open", msg)
+            clisock.close()
+            return
 
     users.append({
         "user": name,
@@ -110,7 +133,7 @@ def add_active_user(clisock, address, source, name):
     })
     print("Active users list:")
     pprint(users)
-    send(clisock, address, "open", "SUCCESS")
+    send(clisock, address, "open", msg)
 
 def remove_active_user(clisock, address, name):
 
